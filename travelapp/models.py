@@ -118,7 +118,7 @@ def _account_save(sender, instance, **kwargs):
         raise Exception("Couldn't change the master db"+\
                 " Status code: {0}, Reason: {1}.".format(res.status_code, res.reason))
 
-    # Take the resource_uri too
+    # Takes the resource_uri from the header of the response
     instance.resource_uri = res.headers.get('location',\
             '').replace(settings.API_ENDPOINT, '')
     if not instance.resource_uri:
@@ -137,7 +137,11 @@ def _account_delete(sender, instance, **kwargs):
     res = api(settings.API_ENDPOINT+instance.resource_uri,
             data_get, method="DELETE")
 
-    if res.status_code != 204:
+    # Two possible right cases when request a deletion:
+    # 204 (NO CONTENT): Successfully deleted
+    # 404 (NOT FOUND): Resource not found
+    # all the other cases raise an Exception.
+    if res.status_code != 204 and res.status_code != 404:
         raise Exception("Couldn't delete to the master db."+\
                 " Status code:{0}, Reason: {1}".format(res.status_code,
                     res.reason))
