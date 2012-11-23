@@ -3,3 +3,4 @@ sqlite.db
 .project
 .pydevproject
 .settings/
+*.swp

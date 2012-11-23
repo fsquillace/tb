@@ -31,6 +31,9 @@ class AccountAdmin(admin.ModelAdmin):
 
 class MailingListAdmin(admin.ModelAdmin):
     list_display = ('name', 'resource_uri') + AUDIT_FIELDS
+
+    def has_add_permission(self, request):
+        return False
     
 
 admin.site.register(MailingList, MailingListAdmin)

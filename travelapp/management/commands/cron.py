@@ -9,7 +9,7 @@ Created on Nov 21, 2012
 
 # From travelapp
 from travelapp.utils import api
-from travelapp.models import Account
+from travelapp.models import Account, MailingList
 
 
 # From django
@@ -25,21 +25,50 @@ class Command(BaseCommand):
         data_get = {'api_key':settings.API_KEY, 'username':settings.USERNAME}
 
         # Update the accounts according to res
-        res = api(settings.API_ENDPOINT+'/v1/account_lead/', data_get)
-        for account in res.json['objects']:
-            ml, created = Account.objects.get_or_create(resource_uri=account['resource_uri'])
+        res = api(settings.API_ENDPOINT+'/v1/mailing_list/', data_get)
+        if res.status_code != 200:
+            raise Exception("Couldn't connect to the DB."+\
+                    " Status code: {0} Reason: {1}".format(res.status_code,
+                        res.reason))
+
+        for mailing in res.json['objects']:
+            ml, created =\
+            MailingList.objects.get_or_create(resource_uri=mailing['resource_uri'])
             # Either if ml is created or already exists update the other fields
-            ml.first_name = account['first_name']
-            ml.last_name = account['last_name']
-            ml.birth_date = account['birth_date']
-            ml.gender = account['gender']
-            ml.city = account['city']
-            ml.country = account['country']
-            ml.street_number = account['street_number']
-            ml.zipcode = account['zipcode']
-            ml.email = account['email']
-            ml.phone = account['phone']
-            ml.lead = account['lead']
-            #ml.mailing_lists = account['first_name']
+            ml.name = mailing['name']
+            ml.resource_uri = mailing['resource_uri']
             ml.save()
+
+
+        # Update the accounts according to res
+        res = api(settings.API_ENDPOINT+'/v1/account_lead/', data_get)
+        if res.status_code != 200:
+            raise Exception("Couldn't connect to the DB."+\
+                    " Status code: {0} Reason: {1}".format(res.status_code,
+                        res.reason))
+
+
+        for account in res.json['objects']:
+            acc, created = Account.objects.get_or_create(resource_uri=account['resource_uri'])
+            # Either if acc is created or already exists update the other fields
+            acc.first_name = account['first_name']
+            acc.last_name = account['last_name']
+            acc.birth_date = account['birth_date']
+            acc.gender = account['gender']
+            acc.city = account['city']
+            acc.country = account['country']
+            acc.street_number = account['street_number']
+            acc.zipcode = account['zipcode']
+            acc.email = account['email']
+            acc.phone = account['phone']
+            acc.lead = account['lead']
+            mailing_lists = []
+            for ml in account['mailing_lists']:
+                m, created = MailingList.objects.get_or_create(resource_uri=ml['resource_uri'])
+                m.name = ml['name']
+                m.save()
+                mailing_lists.append(m)
+            acc.mailing_lists = mailing_lists
+            acc.save()
+
 
