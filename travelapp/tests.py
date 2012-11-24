@@ -13,8 +13,48 @@ from django.db import IntegrityError
 from django.conf import settings
 
 # from tb
-from travelapp.models import Account
+from travelapp.models import Account, MailingList
 from travelapp.utils import api
+
+
+class MailingListTestCase(TestCase):
+    def setUp(self):
+        self.ml = MailingList(
+                name='Classical NL')
+
+    def tearDown(self):
+        pass
+
+    def test_pos_add(self):
+        """
+        Checks when saving the record it appears stored in local DB
+        """
+        self.ml.save()
+        self.assertEqual(self.ml, MailingList.objects.get(name='Classical NL'))
+        self.ml.delete()
+
+    def test_neg_add(self):
+        """
+        Raise error in case of the model is not valid 
+        """
+        # name to None
+        self.ml.name = None
+        self.assertRaises(IntegrityError, self.ml.save)
+        self.ml.name = 'Classical NL'
+
+    def test_pos_del(self):
+        """
+        Checks when deleting a record it disappears in local and DB
+        """
+        self.ml.save()
+        self.ml.delete()
+
+        self.assertRaises(MailingList.DoesNotExist, MailingList.objects.get,
+                name='Classical NL')
+
+
+
+
 
 class AccountTestCase(TestCase):
     def setUp(self):
