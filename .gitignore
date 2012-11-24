@@ -5,3 +5,6 @@ sqlite.db
 .settings/
 *.swp
 *.pyc
+*.pot
+*.log
+local_settings.py
