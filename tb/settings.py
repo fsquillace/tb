@@ -7,7 +7,7 @@ def full_path(filename):
 
 # Get all the API information such as:
 # API_ENDPOINT, API_KEY, USERNAME
-execfile("properties.py")
+execfile(full_path("properties.py"))
 
 
 DEBUG = True
