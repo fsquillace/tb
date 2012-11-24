@@ -52,8 +52,8 @@ class MailingList(BasicData):
 class Account(BasicData):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
-    birth_date = models.DateField()
-    gender = models.CharField(max_length=2, choices=GENDER_CHOICES)
+    birth_date = models.DateField(null=True, blank=True)
+    gender = models.CharField(max_length=2, choices=GENDER_CHOICES, null=True, blank=True)
 
     city = models.CharField(max_length=100, null=True, blank=True)
     country = models.CharField(max_length=2, null=True, blank=True)
