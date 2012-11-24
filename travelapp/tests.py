@@ -4,20 +4,94 @@ when you run "manage.py test".
 
 """
 
+# From python
+import simplejson
+
+# From django
 from django.test import TestCase
+from django.db import IntegrityError
+from django.conf import settings
 
+# from tb
 from travelapp.models import Account
+from travelapp.utils import api
 
-class AccountJSONTestCase(TestCase):
+class AccountTestCase(TestCase):
+    def setUp(self):
+        self.acc = Account(
+                first_name='Barack',
+                last_name='Obama',
+                birth_date='1985-01-01',
+                gender='m',
+                email='bo0099o0o2@gmail.com'
+                )
+
+    def tearDown(self):
+        pass
+
+    def test_pos_add(self):
+        """
+        Checks when saving the record it appears stored in both local and remote DB
+        """
+        self.acc.save()
+        self.assertEqual(self.acc, Account.objects.get(first_name='Barack'))
+        res = api(settings.API_ENDPOINT+self.acc.resource_uri, {'username':settings.USERNAME,
+            'api_key':settings.API_KEY})
+        self.assertEqual(res.json['first_name'], 'Barack')
+        self.acc.delete()
+
+    def test_neg_add(self):
+        """
+        Raise error in case of the model is not valid 
+        """
+        # first_name to None
+        self.acc.first_name = None
+        self.assertRaises(IntegrityError, self.acc.save)
+        self.acc.first_name = 'Barack'
+
+        # last_name to None
+        self.acc.last_name = None
+        self.assertRaises(IntegrityError, self.acc.save)
+        self.acc.last_name = 'Obama'
+
+        # birth_date to None
+        self.acc.birth_date = None
+        self.assertRaises(IntegrityError, self.acc.save)
+        self.acc.birth_date = '1985-01-01'
+
+        # gender to None
+        self.acc.gender = None
+        self.assertRaises(IntegrityError, self.acc.save)
+        self.acc.gender = 'm'
+        
+        # email to None
+        self.acc.email = None
+        self.assertRaises(IntegrityError, self.acc.save)
+
+    def test_pos_del(self):
+        """
+        Checks when deleting a record it disappears in both local and remote DB
+        """
+        self.acc.save()
+        self.acc.delete()
+
+        self.assertRaises(Account.DoesNotExist, Account.objects.get, first_name='Barack')
+        res = api(settings.API_ENDPOINT+self.acc.resource_uri, {'username':settings.USERNAME,
+            'api_key':settings.API_KEY})
+        # Checks the NOT FOUND status code
+        self.assertEqual(res.status_code, 404)
+
+
+
+class APITestCase(TestCase):
     def setUp(self):
         self.acc = Account.objects.create(
                 first_name='Barack',
                 last_name='Obama',
                 birth_date='1985-01-01',
                 gender='m',
-                email='booooo2@gmail.com'
+                email='boo0000ooo2@gmail.com'
                 )
-        # get the resource_uri from the server
 
     def tearDown(self):
         self.acc.delete()

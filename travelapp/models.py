@@ -8,6 +8,7 @@ from django.db import models
 from django.conf import settings
 from django.db.models.signals import pre_delete, pre_save
 from django.dispatch.dispatcher import receiver
+from django.core.exceptions import ValidationError
 
 
 # From travelapp
@@ -78,6 +79,12 @@ class Account(BasicData):
 @receiver(pre_save, sender=Account)
 def _account_save(sender, instance, **kwargs):
 
+    # Do not do anything if the instance is not valid!
+    try:
+        instance.full_clean()
+    except ValidationError:
+        return
+
     data_get = {'api_key':settings.API_KEY, 'username':settings.USERNAME}
 
     res = api(settings.API_ENDPOINT+'/v1/account_lead/', data_get)
@@ -97,7 +104,10 @@ def _account_save(sender, instance, **kwargs):
     data_post['first_name'] = instance.first_name
     data_post['last_name'] = instance.last_name
     data_post['gender'] = instance.gender
-    data_post['birth_date'] = str(instance.birth_date)
+    if instance.birth_date:
+        data_post['birth_date'] = instance.birth_date.strftime("%Y-%m-%d")
+    else:
+        data_post['birth_date'] = None
     data_post['street_number'] = instance.street_number
     data_post['zipcode'] = instance.zipcode
     data_post['city'] = instance.city
