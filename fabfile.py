@@ -4,8 +4,8 @@ from fabric.contrib.console import confirm
 
 from datetime import datetime
 
-env.hosts = ['localhost']
-env.user = 'root'
+env.hosts = ['ssh.alwaysdata.com']
+env.user = 'feel'
 
 def test():
     with settings(warn_only=True):
