@@ -15,6 +15,7 @@ from django.conf import settings
 # from tb
 from travelapp.models import Account, MailingList
 from travelapp.utils import api
+from travelapp.views import ERR_CODE
 
 
 class MailingListTestCase(TestCase):
@@ -123,7 +124,7 @@ class AccountTestCase(TestCase):
 
 
 
-class APITestCase(TestCase):
+class APIAccountTestCase(TestCase):
     def setUp(self):
         self.acc = Account.objects.create(
                 first_name='Barack',
@@ -141,7 +142,7 @@ class APITestCase(TestCase):
         """
         Tests that the GET request return the right response.
         """
-        res = self.client.get('/account_lead')
+        res = self.client.get('/account_lead/')
         self.assertEqual(simplejson.loads(res.content)[0]['fields']['first_name'],
                 self.acc.first_name)
 
@@ -156,7 +157,8 @@ class APITestCase(TestCase):
         Tests whether the response gives the right error when the field is not correct.
         """
         res = self.client.get('/account_lead'+'/bad_resource_uri :)')
-        self.assertEqual(simplejson.loads(res.content)['err_code'], 1)
+        self.assertEqual(simplejson.loads(res.content)['err_code'],
+                ERR_CODE["ERR_INVALID_URI"])
         
         
     def test_pos_post(self):
@@ -183,7 +185,49 @@ class APITestCase(TestCase):
                 'birth_date':'1985-01-06', 'gender':'m',
                 'email':'asdf@gmail.com'}
         res = self.client.post('/account_lead', data)
-        self.assertEqual(simplejson.loads(res.content)['err_code'], 2)
+        self.assertEqual(simplejson.loads(res.content)['err_code'],
+                ERR_CODE["ERR_INVALID_PARAM"])
+        self.assertRaises(Account.DoesNotExist,
+                Account.objects.get, email='asdf@gmail.com')
+
+        res = self.client.post('/account_lead/bad_resource', data)
+        self.assertEqual(simplejson.loads(res.content)['err_code'],
+                ERR_CODE["ERR_INVALID_URI"])
         self.assertRaises(Account.DoesNotExist,
                 Account.objects.get, email='asdf@gmail.com')
         
+        
+
+class APIMailingListTestCase(TestCase):
+    def setUp(self):
+        self.ml = MailingList.objects.create(
+                name='Rock Linux',
+                resource_uri='/v1/mailing_list/22222/')
+
+    def tearDown(self):
+        self.ml.delete()
+        
+    
+    def test_pos_get(self):
+        """
+        Tests that the GET request return the right response.
+        """
+        res = self.client.get('/mailing_list/')
+        self.assertEqual(simplejson.loads(res.content)[0]['fields']['name'],
+                self.ml.name)
+
+        # Checks if it works with the resource_uri specified
+        res = self.client.get('/mailing_list'+self.ml.resource_uri)
+        self.assertEqual(simplejson.loads(res.content)[0]['fields']['name'],
+                self.ml.name)
+        
+        
+    def test_neg_get(self):
+        """
+        Tests whether the response gives the right error when the uri is not correct.
+        """
+        res = self.client.get('/mailing_list'+'/bad_resource_uri :)')
+        self.assertEqual(simplejson.loads(res.content)['err_code'],
+                ERR_CODE["ERR_INVALID_URI"])
+        
+
