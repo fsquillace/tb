@@ -25,7 +25,7 @@ def prepare_deploy():
     push()
 
 def deploy():
-    code_dir = '/srv/www/tb'
+    code_dir = '~/www/tb'
     with settings(warn_only=True):
         if run("test -d %s" % code_dir).failed:
             run("git clone git://github.com/fsquillace/tb.git %s" % code_dir)
