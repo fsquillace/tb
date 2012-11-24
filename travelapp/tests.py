@@ -66,7 +66,7 @@ class AccountTestCase(TestCase):
                 last_name='Obama',
                 birth_date='1985-01-01',
                 gender='m',
-                email='bo0099o0o2@gmail.com'
+                email='c0099o0o2@gmail.com'
                 )
 
     def tearDown(self):
@@ -97,16 +97,6 @@ class AccountTestCase(TestCase):
         self.assertRaises(IntegrityError, self.acc.save)
         self.acc.last_name = 'Obama'
 
-        # birth_date to None
-        self.acc.birth_date = None
-        self.assertRaises(IntegrityError, self.acc.save)
-        self.acc.birth_date = '1985-01-01'
-
-        # gender to None
-        self.acc.gender = None
-        self.assertRaises(IntegrityError, self.acc.save)
-        self.acc.gender = 'm'
-        
         # email to None
         self.acc.email = None
         self.assertRaises(IntegrityError, self.acc.save)
