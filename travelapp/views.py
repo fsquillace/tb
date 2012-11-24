@@ -9,13 +9,13 @@ from travelapp.models import Account
 from travelapp.forms import AccountForm
 
 
-# Simple way to identify each type of error is assigning them a code
-ERR_CODE = {"ERR_PARAM":1}
+# A simple way to identify each type of error is assigning them a code
+ERR_CODE = {"ERR_PARAM":1, "ERR_INVALID_PARAM":2, "ERR_INVALID_URI":3}
 
 
 def account_lead(request, ruri):
     if request.method == "GET":
-        if not ruri:
+        if not ruri or ruri == '/':
             res = serializers.serialize('json', Account.objects.all())
         else:
             res = None
@@ -31,14 +31,24 @@ def account_lead(request, ruri):
         return HttpResponse(res)
 
     elif request.method == "POST":
-        form = AccountForm(request.POST)
-        if form.is_valid():
-            # Assure that the tenant will be added into the current property
-            form.save()
-            res = simplejson.dumps({'message':'OK'})
+        if ruri and ruri != '/':
+            d = {'err_code':ERR_CODE["ERR_INVALID_URI"],\
+                    'message':'Not correct URI for POST request.'}
         else:
-            d = {'err_code':ERR_CODE["ERR_PARAM"]}
-            d.update(form.errors)
-            res = simplejson.dumps(d)
+            form = AccountForm(request.POST)
+            if form.is_valid():
+                # Assure that the tenant will be added into the current property
+                form.save()
+                d = {'message':'OK'}
+            else:
+                d = {'err_code':ERR_CODE["ERR_INVALID_PARAM"],\
+                        'message':'Some fields are not valid.'}
+                d.update(form.errors)
+
+        res = simplejson.dumps(d)
         return HttpResponse(res)
 
+
+def mailing_list(request):
+    if request.method == 'GET':
+        pass

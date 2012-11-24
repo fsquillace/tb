@@ -142,11 +142,13 @@ class APITestCase(TestCase):
         Tests that the GET request return the right response.
         """
         res = self.client.get('/account_lead')
-        self.assertEqual(simplejson.loads(res.content)[0]['fields']['first_name'], 'Barack')
+        self.assertEqual(simplejson.loads(res.content)[0]['fields']['first_name'],
+                self.acc.first_name)
 
         # Checks if it works with the resource_uri specified
         res = self.client.get('/account_lead'+self.acc.resource_uri)
-        self.assertEqual(simplejson.loads(res.content)[0]['fields']['first_name'], 'Barack')
+        self.assertEqual(simplejson.loads(res.content)[0]['fields']['first_name'],
+                self.acc.first_name)
         
         
     def test_neg_get(self):
@@ -167,6 +169,8 @@ class APITestCase(TestCase):
                 'email':'asdf@gmail.com'}
         res = self.client.post('/account_lead', data)
         self.assertEqual(simplejson.loads(res.content)['message'], 'OK')
+        self.assertEqual(Account.objects.get(first_name='Johnny').first_name,
+                'Johnny')
         Account.objects.get(email='asdf@gmail.com').delete()
         
         
@@ -175,4 +179,11 @@ class APITestCase(TestCase):
         Test whether a POST request with bad parameter gives the right response and
         the DB is not updated.
         """
-        pass
+        data = {'first_name':'','last_name':'Depp',
+                'birth_date':'1985-01-06', 'gender':'m',
+                'email':'asdf@gmail.com'}
+        res = self.client.post('/account_lead', data)
+        self.assertEqual(simplejson.loads(res.content)['err_code'], 2)
+        self.assertRaises(Account.DoesNotExist,
+                Account.objects.get, email='asdf@gmail.com')
+        
