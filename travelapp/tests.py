@@ -6,11 +6,13 @@ when you run "manage.py test".
 
 # From python
 import simplejson
+import urllib
 
 # From django
 from django.test import TestCase
 from django.db import IntegrityError
 from django.conf import settings
+from django.contrib.auth.models import User, Permission
 
 # from tb
 from travelapp.models import Account, MailingList
@@ -126,6 +128,14 @@ class AccountTestCase(TestCase):
 
 class APIAccountTestCase(TestCase):
     def setUp(self):
+        # Make a superuser (don't care on permission for this test)
+        user = User.objects.create_user(username='user',
+                password='password')
+        user.is_superuser = True
+        user.save()
+        self.client.login(username='user', password='password')
+
+
         self.acc = Account.objects.create(
                 first_name='Barack',
                 last_name='Obama',
@@ -200,6 +210,13 @@ class APIAccountTestCase(TestCase):
 
 class APIMailingListTestCase(TestCase):
     def setUp(self):
+        # Make a superuser (don't care on permission for this test)
+        user = User.objects.create_user(username='user',
+                password='password')
+        user.is_superuser = True
+        user.save()
+        self.client.login(username='user', password='password')
+
         self.ml = MailingList.objects.create(
                 name='Rock Linux',
                 resource_uri='/v1/mailing_list/22222/')
@@ -230,4 +247,122 @@ class APIMailingListTestCase(TestCase):
         self.assertEqual(simplejson.loads(res.content)['err_code'],
                 ERR_CODE["ERR_INVALID_URI"])
         
+
+class APIPermissionTestCase(TestCase):
+    def setUp(self):
+        self.weak_user = User.objects.create_user(username='weak_bird',
+                password='password')
+        self.acc_user = User.objects.create_user(username='acc_bird',
+                password='password')
+        self.ml_user = User.objects.create_user(username='ml_bird',
+                password='password')
+
+        self.acc_user.user_permissions.add(Permission.objects.get(codename='add_account'))
+        self.acc_user.user_permissions.add(Permission.objects.get(codename='delete_account'))
+        self.acc_user.user_permissions.add(Permission.objects.get(codename='view_account'))
+
+        self.ml_user.user_permissions.add(Permission.objects.get(codename='view_mailing_list'))
+
+
+    def test_pos_get_ml(self):
+        """
+        Tries to access with a good user to the mailing list info.
+        """
+        data = {'username':self.ml_user.username,
+                'password':'password'}
+        res = self.client.get('/mailing_list/', data)
+        self.assertEqual(res.status_code, 200)
+
+
+        # Use self.client.login() too for check the cookie
+        self.client.login(username=self.ml_user.username,
+                password=self.ml_user.password)
+
+        res = self.client.get('/mailing_list/')
+        self.assertEqual(res.status_code, 200)
+
+    def test_neg_get_ml(self):
+        """
+        Tries to access with a bad user to the mailing list info.
+        """
+        data = {'username':self.weak_user.username,
+                'password':'password'}
+        res = self.client.get('/mailing_list/', data)
+        self.assertEqual(res.status_code, 403)
+
+
+        # Use self.client.login() too for check the cookie
+        self.client.login(username=self.weak_user.username,
+                password=self.ml_user.password)
+
+        res = self.client.get('/mailing_list/')
+        self.assertEqual(res.status_code, 403)
+
+    def test_pos_get_acc(self):
+        """
+        Tries to access with a good user to the account info.
+        """
+        data = {'username':self.acc_user.username,
+                'password':'password'}
+        res = self.client.get('/account_lead/', data)
+        self.assertEqual(res.status_code, 200)
+
+
+        # Use self.client.login() too for check the cookie
+        self.client.login(username=self.acc_user.username,
+                password=self.acc_user.password)
+
+        res = self.client.get('/account_lead/')
+        self.assertEqual(res.status_code, 200)
+
+    def test_neg_get_acc(self):
+        """
+        Tries to access with a bad user to the account info.
+        """
+        data = {'username':self.weak_user.username,
+                'password':'password'}
+        res = self.client.get('/account_lead/', data)
+        self.assertEqual(res.status_code, 403)
+
+
+        # Use self.client.login() too for check the cookie
+        self.client.login(username=self.weak_user.username,
+                password=self.ml_user.password)
+
+        res = self.client.get('/account_lead/')
+        self.assertEqual(res.status_code, 403)
+
+    def test_pos_post_acc(self):
+        """
+        Tries to add with a good user to the account info.
+        """
+        data = {'username':self.acc_user.username,
+                'password':'password'}
+        res = self.client.post('/account_lead/?'+ urllib.urlencode(data))
+        self.assertEqual(res.status_code, 200)
+
+
+        # Use self.client.login() too for check the cookie
+        self.client.login(username=self.acc_user.username,
+                password=self.acc_user.password)
+
+        res = self.client.post('/account_lead/')
+        self.assertEqual(res.status_code, 200)
+
+    def test_neg_post_acc(self):
+        """
+        Tries to add with a bad user to the account info.
+        """
+        data = {'username':self.weak_user.username,
+                'password':'password'}
+        res = self.client.post('/account_lead/?'+ urllib.urlencode(data))
+        self.assertEqual(res.status_code, 403)
+
+
+        # Use self.client.login() too for check the cookie
+        self.client.login(username=self.weak_user.username,
+                password=self.ml_user.password)
+
+        res = self.client.post('/account_lead/')
+        self.assertEqual(res.status_code, 403)
 

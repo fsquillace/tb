@@ -41,7 +41,9 @@ class MailingList(BasicData):
 
     class Meta:
         ordering = ['name']
-
+        permissions = (
+            ("view_mailing_list", "View the mailing list information"),
+        )
 
 
 
@@ -74,6 +76,9 @@ class Account(BasicData):
 
     class Meta:
         ordering = ['last_name']
+        permissions = (
+            ("view_account", "View the account information"),
+        )
 
 
 @receiver(pre_save, sender=Account)
